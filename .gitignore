@@ -6,4 +6,7 @@ spec/fixtures/modules
 spec/fixtures/manifests
 .vagrant
 Vagrantfile
-
+.fixtures.yml
+/spec/fixtures
+*.lock
+*.sw[nmopqrstuv]
