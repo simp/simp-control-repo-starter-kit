@@ -5,7 +5,6 @@ gem 'hiera-eyaml'
 
 group :test do
   gem 'rake'
-  # This matches the currently installed PE version
   gem 'puppet', ENV['PUPPET_VERSION'] || '4.8.2'
   gem 'puppet-lint'
   gem 'puppetlabs_spec_helper'
