@@ -10,3 +10,4 @@ Vagrantfile
 /spec/fixtures
 *.lock
 *.sw[nmopqrstuv]
+.onceover
