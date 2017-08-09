@@ -8,10 +8,16 @@ def gitlab_ci_lint
     'GITLAB_CI_YML_PATH',
     File.expand_path('../../.gitlab-ci.yml', File.dirname(__FILE__)),
   )
-  gitlab_ci_url = ENV['GITLAB_CI_URL'] or fail(
+  unless File.exists? gitlab_ci_yml_path
+    warn "WARNING: no GitLab CI config found at '#{gitlab_ci_yml_path}'"
+    warn '(skipping)'
+    return
+  end
+
+  gitlab_ci_url = ENV['GITLAB_CI_URL'] or abort(
     "ERROR: ENV key not found: GITLAB_CI_URL\n\n" +
     "Example:\n\n" +
-    "    GITLAB_CI_URL=https://gitlab.com/api/v4/ci/lint\n\n"
+    "    export GITLAB_CI_URL=https://gitlab.com/api/v4/ci/lint\n\n"
   )
 
   uri = URI.parse( gitlab_ci_url )

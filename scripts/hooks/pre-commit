@@ -1,2 +1,6 @@
 #!/bin/sh
+echo "==== $PWD"
 rake validate
+
+rake gitlab_ci:lint
+
