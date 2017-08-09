@@ -33,7 +33,11 @@ def gitlab_ci_lint
     http.request(request)
   end
 
-  if response.code_type != Net::HTTPOK || JSON.parse(response.body).fetch('status','') != 'valid'
+  if response.code_type != Net::HTTPOK
+    msg =  "ERROR: Could not use CI linter at #{gitlab_ci_url} " +
+           "(#{response.code}: #{response.message})\n\n"
+
+  elsif JSON.parse(response.body).fetch('status','') != 'valid'
     msg =  "ERROR: #{File.basename(gitlab_ci_yml_path)} is not valid!\n\n"
     data = JSON.parse response.body
     data['errors'].each do |error|
@@ -41,10 +45,10 @@ def gitlab_ci_lint
     end
     msg += "\n\n"
     msg += "Path: '#{gitlab_ci_yml_path}'\n"
-    abort msg
+  else
+    puts "#{File.basename(gitlab_ci_yml_path)} is valid\n\n"
   end
-  # response.code
-  # response.body
+  abort msg if msg
 end
 
 namespace :gitlab_ci do
