@@ -12,5 +12,4 @@ gem 'simp-rspec-puppet-facts', :require => false
 gem 'simp-rake-helpers'
 
 # for debugging ruby code (tests, etc)
-gem 'pry'
-gem 'onceover', '~> 3.2.3'
+gem 'pry' if ENV['PRY'] == 'yes'
