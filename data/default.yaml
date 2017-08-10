@@ -1,0 +1,43 @@
+---
+# Options
+simp_options::auditd: true
+simp_options::clamav: false
+simp_options::dns::servers: ['8.8.8.8']
+simp_options::firewall: true
+simp_options::haveged: true
+simp_options::ldap::bind_hash: '{SSHA}foobarbaz!!!!'
+simp_options::ldap::bind_pw: 's00per sekr3t!'
+simp_options::ldap::root_hash: '{SSHA}foobarbaz!!!!'
+simp_options::ldap::sync_hash: '{SSHA}foobarbaz!!!!'
+simp_options::ldap::sync_pw: 's00per sekr3t!'
+simp_options::logrotate: true
+simp_options::ntpd::servers: ['time.nist.gov']
+simp_options::pam: true
+simp_options::pki: simp
+simp_options::puppet::ca: puppet
+simp_options::puppet::server: puppet
+simp_options::rsync: false
+simp_options::selinux: true
+simp_options::tcpwrappers: true
+simp_options::trusted_nets: ['ALL']
+
+sssd::domains: ['LOCAL']
+simp::scenario: simp
+
+# Settings to make beaker happy
+ssh::server::conf::permitrootlogin: true
+ssh::server::conf::authorizedkeysfile: .ssh/authorized_keys
+simp::sudoers::default_entry:
+  - 'listpw=all'
+  - '!requiretty'
+  - 'syslog=authpriv'
+  - 'root_sudo'
+  - '!umask'
+  - 'env_reset'
+  - 'secure_path = /usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin'
+  - 'env_keep = "COLORS DISPLAY HOSTNAME HISTSIZE INPUTRC KDEDIR LS_COLORS MAIL PS1 PS2 QTDIR USERNAME LANG LC_ADDRESS LC_CTYPE LC_COLLATE LC_IDENTIFICATION LC_MEASUREMENT LC_MESSAGES LC_MONETARY LC_NAME LC_NUMERIC LC_PAPER LC_TELEPHONE LC_TIME LC_ALL LANGUAGE LINGUAS _XKB_CHARSET XAUTHORITY"'
+
+# Site configuration
+pupmod::enable_puppet_master: true
+classes:
+  - profiles::vagrant
