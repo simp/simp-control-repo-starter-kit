@@ -7,10 +7,8 @@ describe 'profile::base' do
         context "on #{fs_name} (derived from #{fs_facts['clientcert']})" do
           let(:facts){ fs_facts }
           let(:environment){ env_name }
-          let(:pre_condition){ 'lookup("simp_options::trusted_nets")' }
           context "without a ::role" do
             it do
-              require 'pry'; binding.pry
               is_expected.to compile.with_all_deps
             end
           end
