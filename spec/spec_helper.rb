@@ -6,10 +6,13 @@
 require 'puppetlabs_spec_helper/module_spec_helper'
 require 'tmpdir'
 require 'yaml'
+require 'fileutils'
 
+ctl_repo_dir = File.expand_path('..',File.dirname(__FILE__))
 spec_dir     = File.dirname(__FILE__)
-hiera_yaml   = File.join(spec_dir, 'hiera.yaml')
-fixture_path = File.expand_path( spec_dir, 'fixtures')
+hiera_yaml   = File.join('..', 'hiera.yaml')
+fixture_path = File.expand_path('fixtures', spec_dir)
+file_utils   = FileUtils::Verbose
 
 ALL_ENVIRONMENTS = ['production']
 
@@ -30,8 +33,7 @@ def factsets
     else
       factset_name =  File.basename(file).sub(/\.json/,'')
 
-      # strip out any ::role and ::self_provisioned facts
-      facts = fs['values'].reject{|k,v| k =~ /^(role|self_provisioned)$/ }
+      facts = fs['values'] #.reject{|k,v| k =~ /^(fact_keys|to_strip_out)$/ }
 
       factsets[ factset_name ] =  facts
     end
@@ -57,13 +59,49 @@ end
 
 RSpec.configure do |c|
   c.default_facts = { :custom_nothing => 0 }
-  c.parser = 'future'
 
-  ### Also add JUnit output in case people want to use that
+  ### TODO: Add JUnit output in case people want to use that?
   ### requires gem 'rspec_junit_formatter'
   ### c.add_formatter('RSpecJUnitFormatter', File.expand_path('spec.xml',spec_dir))
+  c.environmentpath = File.expand_path('environments', fixture_path)
+  FileUtils.mkdir_p c.environmentpath
+  (environments+['production']).flatten.uniq.each do |env|
+    file_utils.ln_sf(ctl_repo_dir, File.join(c.environmentpath, env))
+  end
 
-  c.hiera_config = File.expand_path(File.join(__FILE__, '../hiera.yaml'))
+  require 'pry'; binding.pry
+
+  c.trusted_node_data = true
+  #c.manifest_dir = File.expand_path('../manifests', spec_dir)
+  #c.manifest = File.join(c.manifest_dir,'site.pp')
+  c.before(:suite) do
+    h = YAML.load_file File.expand_path( hiera_yaml, spec_dir )
+    _hiera_yaml = File.expand_path('hiera.yaml', fixture_path)
+    h_ver =  h.fetch('version', 3)
+    if h_ver == 3
+      file_utils.cp_p(h, _hiera_yaml)
+    elsif h_ver == 4
+      h3 = {
+        :backends => ['yaml'],
+        :yaml => { :datadir => File.expand_path(h['datadir'], ctl_repo_dir) },
+        :hierarchy => h['hierarchy'].map{|x| x.fetch('path',nil) || x.fetch('paths',nil)  }.flatten,
+        :logger =>   'console', #or 'puppet'
+      }
+      File.write( _hiera_yaml,  h3.to_yaml)
+      c.hiera_config = _hiera_yaml
+    end
+
+    Puppet.debug=true
+    Puppet::Util::Log.level = :debug
+    Puppet::Util::Log.newdestination(:console)
+  end
+
+  c.before(:each) do
+    Puppet.debug=true
+    Puppet::Util::Log.level = :debug
+    Puppet::Util::Log.newdestination(:console)
+  end
+
 end
 
 # Fail on broken symlinks to module fixtures

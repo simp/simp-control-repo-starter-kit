@@ -1,0 +1,58 @@
+---
+version: 4
+datadir: data
+
+# SIMP Defaults. Complete documentation can be found below.
+# https://docs.puppet.com/puppet/4.9/hiera_config_yaml_4.html
+hierarchy:
+  - name: 'Trusted Certname'
+    path: 'hosts/%{trusted.certname}'
+    backend: yaml
+
+  - name: 'Fqdn'
+    path: 'hosts/%{facts.fqdn}'
+    backend: yaml
+
+  - name: 'Hostname'
+    path: 'hosts/%{facts.hostname}'
+    backend: yaml
+
+  - name: 'Domain'
+    path: 'domains/%{facts.domain}'
+    backend: yaml
+
+  - name: 'OS Family'
+    path: '%{facts.os.family}'
+    backend: yaml
+
+  - name: 'OS Full Release'
+    path: '%{facts.os.name}/%{facts.os.release.full}'
+    backend: yaml
+
+  - name: 'OS Major Release'
+    path: '%{facts.os.name}/%{facts.os.release.major}'
+    backend: yaml
+
+  - name: 'OS Name'
+    path: '%{facts.os.name}'
+    backend: yaml
+
+  - name: 'Hostgroup'
+    path: 'hostgroups/%{hostgroup}'
+    backend: yaml
+
+  - name: 'Default or Common'
+    paths: ['default','common']
+    backend: yaml
+
+  - name: 'Compliance Profiles'
+    path: 'compliance_profiles/%{compliance_profile}'
+    backend: yaml
+
+  - name: 'Settings from SIMP Config'
+    path: 'simp_config_settings'
+    backend: yaml
+
+  - name: 'SIMP Scenarios'
+    path: 'scenarios/%{simp_scenario}'
+    backend: yaml
