@@ -11,3 +11,4 @@ Vagrantfile
 *.lock
 *.sw[nmopqrstuv]
 .onceover
+/modules
