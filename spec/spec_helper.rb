@@ -12,7 +12,7 @@ ctl_repo_dir = File.expand_path('..',File.dirname(__FILE__))
 spec_dir     = File.dirname(__FILE__)
 hiera_yaml   = File.join('..', 'hiera.yaml')
 fixture_path = File.expand_path('fixtures', spec_dir)
-file_utils   = FileUtils::Verbose
+file_utils   = ENV['DEBUG'] == 'yes' ? FileUtils::Verbose : FileUtils
 
 ALL_ENVIRONMENTS = ['production']
 
@@ -57,6 +57,21 @@ def environments
   end
 end
 
+
+def matrix( opts = {} )
+  environments.each do |env_name|
+    context "in environment '#{env_name}'" do
+      factsets.each do |fs_name,fs_facts|
+        context "on #{fs_name} (derived from #{fs_facts['clientcert']})" do
+          let(:facts){ fs_facts }
+          let(:environment){ env_name }
+           yield  fs_facts, fs_name, env_name
+        end
+      end
+    end
+  end
+end
+
 RSpec.configure do |c|
   c.default_facts = { :custom_nothing => 0 }
 
@@ -64,17 +79,11 @@ RSpec.configure do |c|
   ### requires gem 'rspec_junit_formatter'
   ### c.add_formatter('RSpecJUnitFormatter', File.expand_path('spec.xml',spec_dir))
   c.environmentpath = File.expand_path('environments', fixture_path)
-  FileUtils.mkdir_p c.environmentpath
-  (environments+['production']).flatten.uniq.each do |env|
-    file_utils.ln_sf(ctl_repo_dir, File.join(c.environmentpath, env))
-  end
-
-  require 'pry'; binding.pry
 
   c.trusted_node_data = true
-  #c.manifest_dir = File.expand_path('../manifests', spec_dir)
-  #c.manifest = File.join(c.manifest_dir,'site.pp')
   c.before(:suite) do
+    # Create Hiera v3 hierarchies because rspec-puppet doesn't
+    # expose enough of the v4/v5 yet
     h = YAML.load_file File.expand_path( hiera_yaml, spec_dir )
     _hiera_yaml = File.expand_path('hiera.yaml', fixture_path)
     h_ver =  h.fetch('version', 3)
@@ -90,16 +99,14 @@ RSpec.configure do |c|
       File.write( _hiera_yaml,  h3.to_yaml)
       c.hiera_config = _hiera_yaml
     end
-
-    Puppet.debug=true
-    Puppet::Util::Log.level = :debug
-    Puppet::Util::Log.newdestination(:console)
   end
 
   c.before(:each) do
-    Puppet.debug=true
-    Puppet::Util::Log.level = :debug
-    Puppet::Util::Log.newdestination(:console)
+    if ENV.fetch('DEBUG','no') == 'yes'
+      Puppet.debug=true
+      Puppet::Util::Log.level = :debug
+      Puppet::Util::Log.newdestination(:console)
+    end
   end
 
 end
@@ -111,5 +118,10 @@ Dir.glob("#{RSpec.configuration.module_path}/*").each do |dir|
   rescue
     fail "ERROR: The module '#{dir}' is not installed. Tests cannot continue."
   end
+end
+
+# Work-around for 'cannot load backend' failure with Puppet 4
+Dir["#{fixture_path}/modules/*/lib"].entries.each do |lib_dir|
+  $LOAD_PATH << lib_dir
 end
 
