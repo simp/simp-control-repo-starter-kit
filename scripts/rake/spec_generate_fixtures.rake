@@ -1,11 +1,12 @@
 require 'r10k/puppetfile'
 require 'erb'
 require 'json'
+require 'rake/clean'
 
-# Most of this was quickly ripped from Onceover (https://github.com/dylanratcliffe/onceover)
 
 CLEAN.include ['.fixtures.yml', 'spec/fixtures/modules']
 
+# Most of this was quickly ripped from Onceover (https://github.com/dylanratcliffe/onceover)
 class CrSpecHelpers
   def CrSpecHelpers.find_control_repo_root
     root = Dir.pwd

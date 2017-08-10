@@ -40,9 +40,9 @@ def factsets
 end
 
 def environments
-  # rp_env is the default spec-testing environment, but it's unlikely to be
-  # useful for testing the control repo's hiera data (however, it may be useful
-  # for finding broken/missing default cases).
+  # `rp_env` is the default spec-testing environment, but it's unlikely to
+  # match any tiers within the control repo's hiera hierarchy.  Using it
+  # can be useful to identify broken or missing default cases.
   #
   # Set the environment variable `RSPEC_PUPPET_ENVS` to pass in environments as
   # a comma-delimited list.
