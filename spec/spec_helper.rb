@@ -58,7 +58,7 @@ def environments
 end
 
 
-def matrix( opts = {} )
+def spec_test_matrix( opts = {} )
   environments.each do |env_name|
     context "in environment '#{env_name}'" do
       factsets.each do |fs_name,fs_facts|
