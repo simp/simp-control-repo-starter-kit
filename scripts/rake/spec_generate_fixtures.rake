@@ -2,6 +2,7 @@ require 'r10k/puppetfile'
 require 'erb'
 require 'json'
 require 'rake/clean'
+require 'fileutils'
 
 
 CLEAN.include ['.fixtures.yml', 'spec/fixtures/modules']
@@ -130,19 +131,20 @@ namespace :spec do
 
     Args:
       * :replace => Will replace an existing `.fixtures.yaml`.
-                    Accepts 'true' and 'false'. Defaults to 'false'.
+                    Accepts 'true' and 'false'. Defaults to 'true'.
+                    Env var: OVERWRITE_FIXTURES=yes  # 'yes' or 'no'
   EOM
-  task :generate_fixtures, [:replace]  do |t,args|
-    args.with_defaults(:replace => 'false')
+  task :generate_fixtures, [:replace] do |t,args|
+    args.with_defaults(:replace => (ENV.fetch('OVERWRITE_FIXTURES','yes')=='yes').to_s )
     replace = args[:replace] == 'true' ? true : false
 
     cr_root = CrSpecHelpers.find_control_repo_root
     fx_file = File.expand_path('./.fixtures.yml',cr_root)
     if File.exists?(fx_file)
       if replace
-        FileUtils.unlink(fx_file)
+        FileUtils.rm_f(fx_file)
       else
-        fail ".fixtures.yml already exists, we won't overwrite because we are " +
+        fail "ERROR: .fixtures.yml already exists, we won't overwrite because we are " +
              "scared (hint: run `rake clean`)"
       end
     end
@@ -150,5 +152,7 @@ namespace :spec do
     warn "Writing '#{fx_file}'"
     File.write(fx_file,fixtures)
   end
+
 end
 
+task :spec_prep => ['spec:generate_fixtures']
