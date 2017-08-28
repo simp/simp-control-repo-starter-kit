@@ -1,0 +1,12 @@
+require 'spec_helper'
+
+# NOTE: These spec tests were generated and are extremely minomal.
+# NOTE: There are probably other tests that you should add.
+# NOTE: Remove this notice when you are done.
+
+describe '<%= puppet_class  %>' do
+  spec_test_matrix do |fs_facts, fs_name, env_name|
+    it { is_expected.to compile.with_all_deps }
+    it { is_expected.to create_class('<%= puppet_class %>') }
+  end
+end
