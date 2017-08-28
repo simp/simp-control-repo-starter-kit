@@ -4,7 +4,6 @@ require 'json'
 require 'rake/clean'
 require 'fileutils'
 
-
 CLEAN.include ['.fixtures.yml', 'spec/fixtures/modules']
 
 # Most of this was quickly ripped from Onceover (https://github.com/dylanratcliffe/onceover)
@@ -34,33 +33,61 @@ class CrSpecHelpers
     forge_modules = []
     repositories = []
 
+    _processed = 0
+    _size=modules.size
     modules.each do |mod|
-      logger.debug "Converting #{mod.to_s} to .fixtures.yml format"
+      warn "Converting #{mod.to_s} to .fixtures.yml format" if (Rake.verbose == true)
       # This logic could probably be cleaned up. A lot.
       if mod.is_a? R10K::Module::Forge
+        _repo = {}
         if mod.expected_version.is_a?(Hash)
           # Set it up as a symlink, because we are using local files in the Puppetfile
-          symlinks << {
+          _symlink = {
             'name' => mod.name,
             'dir' => mod.expected_version[:path]
           }
+          symlinks << _symlink
+          _processed += 1
+          pp _symlink
         elsif mod.expected_version.is_a?(String)
           # Set it up as a normal forge module
-          forge_modules << {
-            'name' => mod.name,
+          _forge_module << {
+e,
             'repo' => mod.title,
             'ref' => mod.expected_version
           }
+          forge_modules << _forge_module
+          _processed += 1
+          pp _forge_module
         end
       elsif mod.is_a? R10K::Module::Git
         # Set it up as a git repo
-        repositories << {
-            'name' => mod.name,
-            # I know I shouldn't be doing this, but trust me, there are no methods
-            # anywhere that expose this value, I looked.
-            'repo' => mod.instance_variable_get(:@remote),
-            'ref' => mod.version
-          }
+        _repo = {
+          'name' => mod.name,
+          # I know I shouldn't be doing this, but trust me, there are no methods
+          # anywhere that expose this value, I looked.
+          'repo' => mod.instance_variable_get(:@remote),
+          'ref' => mod.send(:desired_ref) # faster than .version
+        }
+        repositories << _repo
+        _processed += 1
+        pp _repo
+      end
+      warn "Processed: [#{_processed}/#{_size}] modules" if (Rake.verbose == true)
+    end
+
+
+    warn 'end of module conversion'
+
+    extra_fixtures_file = File.join(_root, '.fixtures.extra.yml')
+    if File.exists? extra_fixtures_file
+      _f = YAML.load_file( extra_fixtures_file )
+      _fx = _f['fixtures']
+      if _r = _fx.fetch('repositories',nil)
+        _repositories = _r.map{|k,v| {'name' => k, 'repo' => v['repo'], 'ref' => v['ref']}}
+        warn "Adding #{_repositories.size} extra fixtures in '#{extra_fixtures_file}':"
+        _repositories.each{|__r| pp __r}
+        repositories = (repositories + _repositories).flatten
       end
     end
 
@@ -78,7 +105,7 @@ class CrSpecHelpers
           _dir = _mod.relative_path_from(_fixtures_dir)
         else
           _dir = Pathname.new(File.expand_path(mod))
-        end
+                  end
 
         symlinks << {
           'name' => File.basename(mod),
@@ -92,7 +119,7 @@ class CrSpecHelpers
   end
 
   def CrSpecHelpers.evaluate_template(template_name,bind)
-    logger.debug "Evaluating template #{template_name}"
+    warn  "Evaluating template #{template_name}"
     root_dir     = CrSpecHelpers.find_control_repo_root
     template_dir = File.expand_path('templates',File.dirname(__FILE__))
     template     = File.read(File.expand_path("./#{template_name}",template_dir))
