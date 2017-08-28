@@ -31,7 +31,7 @@ def factsets
       warn "         Was it captured using `puppet facts --environment production`?"
       warn '='*80
     else
-      factset_name =  File.basename(file).sub(/\.json/,'')
+      factset_name =  File.basename(file).sub(/\.facts\.json/,'')
 
       facts = fs['values'] #.reject{|k,v| k =~ /^(fact_keys|to_strip_out)$/ }
 
@@ -58,19 +58,20 @@ def environments
 end
 
 
-def spec_test_matrix( opts = {} )
+def spec_test_matrix(opts = {}, &block)
   environments.each do |env_name|
     context "in environment '#{env_name}'" do
       factsets.each do |fs_name,fs_facts|
         context "on #{fs_name} (derived from #{fs_facts['clientcert']})" do
           let(:facts){ fs_facts }
           let(:environment){ env_name }
-           yield  fs_facts, fs_name, env_name
+            class_exec(fs_facts, fs_name, env_name, &block)
         end
       end
     end
   end
 end
+
 
 RSpec.configure do |c|
   c.default_facts = { :custom_nothing => 0 }
@@ -99,17 +100,42 @@ RSpec.configure do |c|
       File.write( _hiera_yaml,  h3.to_yaml)
       c.hiera_config = _hiera_yaml
     end
+
+    # sanitize hieradata
+    if defined?(hieradata)
+      set_hieradata(hieradata.gsub(':','_'))
+    elsif defined?(class_name)
+      set_hieradata(class_name.gsub(':','_'))
+    end
   end
 
+  c.after(:each) do
+    # clean up the mocked environmentpath
+    FileUtils.rm_rf(@spec_global_env_temp)
+    @spec_global_env_temp = nil
+  end
+
+
   c.before(:each) do
+    @spec_global_env_temp = Dir.mktmpdir('simpspec')
+
+    if defined?(environment)
+      #set_environment(environment)
+      FileUtils.mkdir_p(File.join(@spec_global_env_temp,environment.to_s))
+    end
+
+    # ensure the user running these tests has an accessible environmentpath
+    Puppet[:environmentpath] = @spec_global_env_temp
+    Puppet[:user] = Etc.getpwuid(Process.uid).name
+    Puppet[:group] = Etc.getgrgid(Process.gid).name
     if ENV.fetch('DEBUG','no') == 'yes'
       Puppet.debug=true
       Puppet::Util::Log.level = :debug
       Puppet::Util::Log.newdestination(:console)
     end
   end
-
 end
+
 
 # Fail on broken symlinks to module fixtures
 Dir.glob("#{RSpec.configuration.module_path}/*").each do |dir|
@@ -124,4 +150,3 @@ end
 Dir["#{fixture_path}/modules/*/lib"].entries.each do |lib_dir|
   $LOAD_PATH << lib_dir
 end
-
