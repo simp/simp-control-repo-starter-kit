@@ -1,0 +1,23 @@
+---
+name: ctlrepo
+save-rerun: false
+
+tasks:
+  - ctlrepo*
+#  - puppet_agent::version
+#  - puppet_*
+#  - reboot*
+#  - http_request
+#  - package
+#  - service
+#  - yum
+
+plans:
+  - ctlrepo*
+#  - canary
+#  - puppet_agent*
+#  - puppetdb_fact*
+#  - reboot
+#  - secure_env_vars
+#  - aggregate*
+

@@ -1,0 +1,17 @@
+---
+config:
+  transport: local
+groups:
+# Used in CI to deploy to Puppet Server (see `.gitlab-ci.yml`)
+- name: puppetservers
+  config:
+    transport: ssh
+    ssh:
+      user: puppet-deploy
+      private-key:
+        _plugin: env_var
+        var: PUPPET_DEPLOY_SSH_KEY
+        default: totally_wrong_path_on_purpose_check_your_inventory_file
+  targets:
+    - uri:   url.of.puppet.server
+      alias: puppetserver

@@ -1,0 +1,51 @@
+variables:
+  PUPPET_BIN: /opt/puppetlabs/puppet/bin
+  BOLT_BIN: /opt/puppetlabs/bolt/bin
+  PUPPET_SERVER: fqdn.of.puppet.server
+
+stages:
+  - validate
+  - build
+  - deploy
+
+.validate_stage: &validate_stage
+  stage: validate
+  tags:
+    - puppetserver-deploy
+
+# Make sure $PUPPET_DEPLOY_SSH_KEY is provided by GitLab CI as a FILE variable
+# (not protected; it must deploy canary branches as well as production)
+deploy:
+  stage: deploy
+  tags:
+    - puppetserver-deploy
+  script:
+    - 'BOLT_PROJECT="$CI_PROJECT_DIR" "$BOLT_BIN/bolt" command run -t "$PUPPET_SERVER" "/usr/local/sbin/r10k_deploy.sh $CI_COMMIT_REF_NAME"'
+
+puppet:
+  <<: *validate_stage
+  script:
+    - '"$PUPPET_BIN/puppet-lint" .'
+    - '"$PUPPET_BIN/yaml-lint" data'
+    - '"$PUPPET_BIN/puppet" parser validate site'
+    - '"$PUPPET_BIN/puppet" parser validate --tasks plans'
+
+puppetfile:
+  <<: *validate_stage
+  rules:
+    - when: never  # TODO: unskip job when we have git provider for r10k
+  script:
+    - 'command -v git || echo "WARNING: no git executable in PATH"'
+    - '"$BOLT_BIN/r10k" puppetfile check'
+
+todos:
+  <<: *validate_stage
+  allow_failure: true
+  script:
+    - '"$BOLT_BIN/rake" todo[yes,no]'
+
+fixmes:
+  <<: *validate_stage
+  allow_failure: true # TODO remove after migration
+  script:
+    - '"$BOLT_BIN/rake" todo[no,yes]'
