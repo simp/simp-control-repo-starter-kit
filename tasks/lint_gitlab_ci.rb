@@ -14,7 +14,6 @@ def lint_request(gitlab_ci_url, gitlab_token, body)
       verify: false,
     }
   )
-
   response = conn.post(gitlab_ci_url) do |req|
     req.params['limit'] = 100
     req.headers['Content-Type'] = 'application/json'
@@ -63,8 +62,8 @@ else
   }
 end
 
-gitlab_token = params['gitlab_private_api_token'] || ENV['GITLAB_API_TOKEN']
-gitlab_ci_lint_uri = params['gitlab_ci_lint_uri'] || ENV['GITLAB_CI_LINT_URI']
+gitlab_token = params['gitlab_private_api_token'] || ENV['GITLAB_API_TOKEN'] || fail('ERROR: missing gitlab_private_api_token/GITLAB_API_TOKEN')
+gitlab_ci_lint_uri = params['gitlab_ci_lint_uri'] || ENV['GITLAB_CI_LINT_URI'] || fail('ERROR: missing gitlab_ci_lint_uri/GITLAB_CI_LINT_URI')
 files = (params['repo_paths'] || []).map { |x| File.join(x, '.gitlab-ci.yml') } || ARGV
 warn "files", files
 raise('No repo_paths given') if params.to_h['repo_paths'].to_a.empty?

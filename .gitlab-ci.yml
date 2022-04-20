@@ -2,6 +2,7 @@ variables:
   PUPPET_BIN: /opt/puppetlabs/puppet/bin
   BOLT_BIN: /opt/puppetlabs/bolt/bin
   PUPPET_SERVER: fqdn.of.puppet.server
+  REMOTE_R10K_DEPLOY_SCRIPT: /usr/local/sbin/r10k_deploy.sh
 
 stages:
   - validate
@@ -13,14 +14,17 @@ stages:
   tags:
     - puppetserver-deploy
 
-# Make sure $PUPPET_DEPLOY_SSH_KEY is provided by GitLab CI as a FILE variable
-# (not protected; it must deploy canary branches as well as production)
+# Deploy control repo branch to Puppet server(s)
+#
+# * Make sure $PUPPET_DEPLOY_SSH_KEY is provided by GitLab CI as a FILE variable
+# * The GitLab CI variable PUPPET_DEPLOY_SSH_KEY must not be protected because
+#   it has to be able to deploy canary branches as well as `production`
 deploy:
   stage: deploy
   tags:
     - puppetserver-deploy
   script:
-    - 'BOLT_PROJECT="$CI_PROJECT_DIR" "$BOLT_BIN/bolt" command run -t "$PUPPET_SERVER" "/usr/local/sbin/r10k_deploy.sh $CI_COMMIT_REF_NAME"'
+    - 'BOLT_PROJECT="$CI_PROJECT_DIR" "$BOLT_BIN/bolt" command run -t "$PUPPET_SERVER" "$REMOTE_R10K_DEPLOY_SCRIPT" $CI_COMMIT_REF_NAME"'
 
 puppet:
   <<: *validate_stage
